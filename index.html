@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎒 우당탕탕 발표 순서 뽑기!</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- FontAwesome Icons for Playful Buttons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Canvas Confetti for Celebration effects -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- HEADER -->
+    <header>
+      <div class="logo-container">
+        <h1>우당탕탕 발표 순서 뽑기!</h1>
+      </div>
+      <div class="header-controls">
+        <button id="soundToggleBtn" class="control-btn sound-on" onclick="app.toggleSound()">
+          <i class="fas fa-volume-up"></i> <span>효과음 켜짐</span>
+        </button>
+        <button id="resetAppBtn" class="control-btn reset-btn" onclick="app.resetAll()">
+          <i class="fas fa-rotate-left"></i> <span>전체 초기화</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- TAB BUTTONS -->
+    <nav class="tabs-container">
+      <button id="tabNamesBtn" class="tab-button active" onclick="app.switchTab('names')">
+        👤 학생 이름 뽑기
+      </button>
+      <button id="tabNumbersBtn" class="tab-button" onclick="app.switchTab('numbers')">
+        🔢 번호로 뽑기
+      </button>
+      <button id="tabGroupsBtn" class="tab-button" onclick="app.switchTab('groups')">
+        👥 모둠으로 뽑기
+      </button>
+    </nav>
+
+    <!-- MAIN GRID CONTAINER -->
+    <main class="main-grid">
+      
+      <!-- LEFT SECTION: SETTINGS / INPUTS -->
+      <section class="settings-section">
+        
+        <!-- Tab 1: Names Configuration -->
+        <div id="configNames" class="clay-card mode-section active">
+          <h2 class="card-title">👤 학생 등록</h2>
+          
+          <!-- Auto-Generate by Student Count -->
+          <div class="form-group">
+            <label><i class="fas fa-bolt"></i> 학생 수 입력으로 빠른 생성</label>
+            <div class="input-number-wrapper">
+              <button class="btn-circle" onclick="app.adjustStudentCount(-1)">-</button>
+              <input type="number" id="quickCountInput" value="20" min="1" max="100">
+              <button class="btn-circle" onclick="app.adjustStudentCount(1)">+</button>
+            </div>
+            <button class="action-btn btn-blue" style="margin-top: 8px;" onclick="app.generateByNumbers()">
+              <i class="fas fa-wand-magic-sparkles"></i> 번호 명단 생성
+            </button>
+          </div>
+
+          <!-- Manual Names Area -->
+          <div class="form-group" style="margin-top: 1.5rem; border-top: 2px dashed var(--color-border); padding-top: 1.2rem;">
+            <label><i class="fas fa-edit"></i> 학생 이름 직접 입력</label>
+            <p style="font-size: 0.8rem; color: rgba(44,44,84,0.6); margin-bottom: 6px;">(쉼표나 줄바꿈으로 구분해 여러 명 입력 가능)</p>
+            <textarea id="namesTextarea" placeholder="예: 김민수, 이서연, 박지훈&#10;최지우&#10;정우진"></textarea>
+            <button class="action-btn" style="margin-top: 8px;" onclick="app.addCustomNames()">
+              <i class="fas fa-plus"></i> 학생 등록하기
+            </button>
+          </div>
+
+          <!-- Tags List -->
+          <div class="tags-list-container">
+            <div class="tags-list-header">
+              <span>등록된 학생 명단</span>
+              <span id="namesCountBadge" class="tag-counter">0명</span>
+            </div>
+            <div id="namesChipsContainer" class="tags-scroll">
+              <!-- Dynamically populated chips -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: Numbers Configuration -->
+        <div id="configNumbers" class="clay-card mode-section">
+          <h2 class="card-title">🔢 번호 범위 설정</h2>
+          
+          <div class="form-group">
+            <label><i class="fas fa-play"></i> 시작 번호</label>
+            <div class="input-number-wrapper">
+              <button class="btn-circle" onclick="app.adjustNumberValue('numStart', -1)">-</button>
+              <input type="number" id="numStart" value="1" min="1">
+              <button class="btn-circle" onclick="app.adjustNumberValue('numStart', 1)">+</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label><i class="fas fa-flag-checkered"></i> 끝 번호</label>
+            <div class="input-number-wrapper">
+              <button class="btn-circle" onclick="app.adjustNumberValue('numEnd', -1)">-</button>
+              <input type="number" id="numEnd" value="30" min="1">
+              <button class="btn-circle" onclick="app.adjustNumberValue('numEnd', 1)">+</button>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-top: 1.5rem; display: flex; gap: 8px;">
+            <button class="action-btn btn-blue" onclick="app.applyNumberPreset(20)">1 ~ 20번</button>
+            <button class="action-btn btn-blue" onclick="app.applyNumberPreset(30)">1 ~ 30번</button>
+          </div>
+
+          <button class="action-btn" style="margin-top: 1.2rem;" onclick="app.applyNumbersRange()">
+            <i class="fas fa-check"></i> 번호 적용하기
+          </button>
+        </div>
+
+        <!-- Tab 3: Groups Configuration -->
+        <div id="configGroups" class="clay-card mode-section">
+          <h2 class="card-title">👥 모둠 설정</h2>
+
+          <!-- Auto-Generate Groups -->
+          <div class="form-group">
+            <label><i class="fas fa-shapes"></i> 모둠 수 설정</label>
+            <div class="input-number-wrapper">
+              <button class="btn-circle" onclick="app.adjustGroupCount(-1)">-</button>
+              <input type="number" id="groupCountInput" value="6" min="1" max="50">
+              <button class="btn-circle" onclick="app.adjustGroupCount(1)">+</button>
+            </div>
+            <button class="action-btn btn-blue" style="margin-top: 8px;" onclick="app.generateGroupsByCount()">
+              <i class="fas fa-wand-magic-sparkles"></i> 모둠 번호 생성
+            </button>
+          </div>
+
+          <!-- Custom Groups Area -->
+          <div class="form-group" style="margin-top: 1.5rem; border-top: 2px dashed var(--color-border); padding-top: 1.2rem;">
+            <label><i class="fas fa-users-viewfinder"></i> 모둠 이름 직접 입력</label>
+            <p style="font-size: 0.8rem; color: rgba(44,44,84,0.6); margin-bottom: 6px;">(쉼표나 줄바꿈으로 구분)</p>
+            <textarea id="groupsTextarea" placeholder="예: 햇살모둠, 바람모둠, 구름모둠&#10;우주모둠&#10;바다모둠"></textarea>
+            <button class="action-btn" style="margin-top: 8px;" onclick="app.addCustomGroups()">
+              <i class="fas fa-plus"></i> 모둠 등록하기
+            </button>
+          </div>
+
+          <!-- Groups Chip Container -->
+          <div class="tags-list-container">
+            <div class="tags-list-header">
+              <span>등록된 모둠 명단</span>
+              <span id="groupsCountBadge" class="tag-counter">0개</span>
+            </div>
+            <div id="groupsChipsContainer" class="tags-scroll">
+              <!-- Dynamically populated chips -->
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- CENTER SECTION: DRAW ENGINE STAGE -->
+      <section class="draw-stage">
+        
+        <!-- Lucky Screen -->
+        <div id="screenCard" class="screen-card">
+          <div id="stageBadge" class="mode-badge">👤 학생 이름 뽑기</div>
+          
+          <div class="display-box">
+            <div class="slot-machine-viewport">
+              <div id="slotDisplayText" class="slot-text">준비 완료! 🎉</div>
+            </div>
+            <div id="statusSubtitleText" class="status-subtitle">학생을 등록한 후 뽑기를 진행해 주세요.</div>
+          </div>
+
+          <!-- Inner micro stats -->
+          <div style="width: 100%; margin-top: auto;">
+            <div class="stage-stats">
+              <div class="stat-item">
+                <span id="statRemaining" class="stat-val">0</span>
+                <span class="stat-lbl">발표 대기</span>
+              </div>
+              <div class="stat-item" style="border-left: 2px dashed var(--color-border); border-right: 2px dashed var(--color-border); padding: 0 1.5rem;">
+                <span id="statDrawn" class="stat-val">0</span>
+                <span class="stat-lbl">발표 완료</span>
+              </div>
+              <div class="stat-item">
+                <span id="statTotal" class="stat-val">0</span>
+                <span class="stat-lbl">전체 대상</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Large Play Button -->
+        <div class="draw-action-container">
+          <button id="drawBtn" class="draw-btn" onclick="app.drawNext()" disabled>
+            <i class="fas fa-gift"></i> <span>발표자 뽑기 시작!</span>
+          </button>
+        </div>
+
+      </section>
+
+      <!-- RIGHT SECTION: TIMELINE RESULTS -->
+      <section class="clay-card results-section">
+        <h2 class="card-title">🏆 발표 순서 결과</h2>
+        
+        <div class="results-list-wrapper">
+          <div id="emptyResults" class="empty-results">
+            <span class="empty-results-icon">🤔</span>
+            <span>아직 아무도 뽑히지 않았어요!</span>
+            <span style="font-size: 0.8rem; font-weight: normal; color: rgba(44,44,84,0.5);">"발표자 뽑기 시작!" 버튼을 눌러보세요.</span>
+          </div>
+          
+          <div id="drawnCardsList" class="drawn-cards-list">
+            <!-- Dynamically populated cards -->
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
